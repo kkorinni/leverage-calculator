@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>5% 리스크 고정 2단계 계산기</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 520px;
+      margin: auto;
+      padding: 20px;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 6px 0 12px 0;
+    }
+    .box {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 8px;
+      background: #f4f6f8;
+    }
+    .hidden {
+      display: none;
+    }
+    .highlight {
+      font-weight: bold;
+      font-size: 17px;
+    }
+  </style>
+</head>
+<body>
+
+<h2>📊 5% 리스크 고정 계산기</h2>
+
+<!-- 1단계 -->
+<label>진입 가격</label>
+<input type="number" id="entry">
+
+<label>손절 가격</label>
+<input type="number" id="stop">
+
+<label>익절 가격</label>
+<input type="number" id="target">
+
+<div id="step1Result" class="box hidden"></div>
+
+<!-- 2단계 -->
+<div id="step2" class="box hidden">
+  <div class="highlight">② 레버리지 입력 (엔터)</div><br>
+
+  <label>레버리지 (배)</label>
+  <input type="number" id="leverage">
+
+  <div id="step2Result"></div>
+</div>
+
+<script>
+let stopLossPercent = 0;
+
+// 엔터 처리 공통 함수
+function handleEnter(event, callback) {
+  if (event.key === "Enter") {
+    callback();
+  }
+}
+
+function calculateStep1() {
+  const entry = Number(document.getElementById("entry").value);
+  const stop = Number(document.getElementById("stop").value);
+  const target = Number(document.getElementById("target").value);
+
+  if (!entry || !stop || entry === stop) return;
+
+  stopLossPercent = Math.abs(entry - stop) / entry * 100;
+  const rrRatio = Math.abs(target - entry) / Math.abs(entry - stop);
+
+  document.getElementById("step1Result").classList.remove("hidden");
+  document.getElementById("step1Result").innerHTML = `
+    <div class="highlight">① 손절 기준 정보</div><br>
+    손절 폭: ${stopLossPercent.toFixed(2)}%<br>
+    손익비 (R:R): ${rrRatio.toFixed(2)}<br><br>
+    ※ 손절 시 전체 시드의 <b>5%</b> 손실 기준
+  `;
+
+  document.getElementById("step2").classList.remove("hidden");
+}
+
+function calculateStep2() {
+  const leverage = Number(document.getElementById("leverage").value);
+  if (!leverage || !stopLossPercent) return;
+
+  const seedRatio = 5 / (leverage * stopLossPercent);
+
+  document.getElementById("step2Result").innerHTML = `
+    <br>
+    👉 <b>시드 비중:</b> ${(seedRatio * 100).toFixed(2)}%<br><br>
+    손절 시 전체 시드 손실 = <b>5%</b>
+  `;
+}
+
+// 🔹 이벤트 연결
+["entry", "stop", "target"].forEach(id => {
+  const el = document.getElementById(id);
+  el.addEventListener("keydown", e => handleEnter(e, calculateStep1));
+  el.addEventListener("input", calculateStep1);
+});
+
+document.getElementById("leverage")
+  .addEventListener("keydown", e => handleEnter(e, calculateStep2));
+</script>
+
+</body>
+</html>
